@@ -1,0 +1,218 @@
+:root {
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  color: #f4f7fb;
+  background: #090d14;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(78, 132, 255, 0.16), transparent 32rem),
+    #090d14;
+}
+
+button, input, select, textarea { font: inherit; }
+
+button {
+  border: 1px solid #39465c;
+  color: #f8fbff;
+  background: #162033;
+  border-radius: 10px;
+  padding: 0.65rem 0.9rem;
+  cursor: pointer;
+}
+
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+input, select, textarea {
+  color: #f8fbff;
+  background: #0f1623;
+  border: 1px solid #334158;
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.eyebrow {
+  color: #83a8ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.login-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.login-card {
+  width: min(28rem, 100%);
+  display: grid;
+  gap: 1rem;
+  padding: 2rem;
+  border: 1px solid #27334a;
+  border-radius: 22px;
+  background: rgba(15, 22, 35, 0.94);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+.login-card label { display: grid; gap: 0.35rem; }
+
+.app-shell { min-height: 100vh; }
+
+.topbar {
+  min-height: 5.5rem;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #202b3d;
+  background: rgba(9, 13, 20, 0.9);
+  backdrop-filter: blur(18px);
+}
+
+.topbar h1, .sidebar h2, .chat-header h2, .admin-panel h2 {
+  margin: 0.2rem 0 0;
+}
+
+.identity {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.2rem 1rem;
+  align-items: center;
+}
+
+.identity span { color: #9aa8bd; font-size: 0.82rem; }
+.identity button { grid-row: 1 / span 2; grid-column: 2; }
+
+.workspace {
+  display: grid;
+  grid-template-columns: 17rem minmax(0, 1fr) 18rem;
+  min-height: calc(100vh - 5.5rem);
+}
+
+.sidebar, .admin-panel {
+  padding: 1rem;
+  border-right: 1px solid #202b3d;
+  background: #0c121d;
+}
+
+.admin-panel {
+  border-right: 0;
+  border-left: 1px solid #202b3d;
+}
+
+.sidebar-header, .chat-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.sidebar nav {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.thread {
+  display: grid;
+  gap: 0.25rem;
+  text-align: left;
+  background: transparent;
+}
+
+.thread span { color: #8190a7; font-size: 0.72rem; }
+.thread.active { border-color: #638eff; background: #16233c; }
+
+.chat-console {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.chat-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #202b3d;
+}
+
+.agent-picker { display: grid; gap: 0.3rem; }
+
+.messages {
+  overflow: auto;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.message {
+  max-width: min(46rem, 88%);
+  padding: 0.9rem 1rem;
+  border: 1px solid #293750;
+  border-radius: 16px;
+  background: #111a29;
+}
+
+.message.user {
+  align-self: flex-end;
+  background: #172b50;
+}
+
+.message header {
+  color: #86aaff;
+  font-weight: 750;
+  font-size: 0.78rem;
+}
+
+.message p { margin: 0.45rem 0 0; white-space: pre-wrap; }
+.streaming { border-style: dashed; }
+
+.composer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #202b3d;
+}
+
+.composer textarea { min-height: 4rem; resize: vertical; }
+
+.error-panel {
+  border: 1px solid #8f3c4c;
+  background: #321722;
+  border-radius: 12px;
+  padding: 0.85rem;
+}
+
+.admin-panel dl { display: grid; gap: 0.75rem; }
+.admin-panel dl div {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #273249;
+  padding-bottom: 0.6rem;
+}
+.admin-panel dt { color: #93a1b5; }
+.admin-panel dd { margin: 0; font-weight: 750; }
+.muted { color: #8794a8; }
+
+@media (max-width: 1100px) {
+  .workspace { grid-template-columns: 15rem minmax(0, 1fr); }
+  .admin-panel { display: none; }
+}
+
+@media (max-width: 760px) {
+  .topbar { align-items: flex-start; gap: 1rem; }
+  .workspace { display: block; }
+  .sidebar { border-right: 0; border-bottom: 1px solid #202b3d; }
+  .sidebar nav { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
+  .chat-console { min-height: 72vh; }
+}
