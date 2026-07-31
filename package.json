@@ -1,13 +1,14 @@
 {
-  "name": "orkio-platform-2-frontend-rc0",
-  "version": "0.0.1",
+  "name": "orkio-platform-2-frontend-rc1",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
     "build": "vite build",
     "test": "node --test tests/*.test.mjs",
-    "check:contracts": "node scripts/check-contracts.mjs"
+    "check:contracts": "node scripts/check-contracts.mjs",
+    "smoke:local": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "react": "18.3.1",

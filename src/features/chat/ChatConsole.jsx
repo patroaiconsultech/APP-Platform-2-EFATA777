@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
+
 import { AgentPicker } from "../../components/AgentPicker.jsx";
 import { MessageBubble } from "../../components/MessageBubble.jsx";
+
 
 export function ChatConsole({
   agents,
@@ -9,6 +11,7 @@ export function ChatConsole({
   messages,
   streamState,
   onSend,
+  onCancel,
   disabled,
 }) {
   const [content, setContent] = useState("");
@@ -16,6 +19,9 @@ export function ChatConsole({
     () => content.trim().length > 0 && !disabled,
     [content, disabled],
   );
+  const canCancel =
+    Boolean(streamState.requestId) &&
+    ["connecting", "streaming"].includes(streamState.phase);
 
   async function submit(event) {
     event.preventDefault();
@@ -26,20 +32,13 @@ export function ChatConsole({
   }
 
   return (
-    <section className="chat-console">
-      <header className="chat-header">
-        <div>
-          <span className="eyebrow">REALTIME CONTRACT</span>
-          <h2>Console multiagente</h2>
-        </div>
-        <AgentPicker
-          agents={agents}
-          selectedAgentId={selectedAgentId}
-          onChange={onAgentChange}
-        />
-      </header>
-
-      <div className="messages">
+    <section>
+      <AgentPicker
+        agents={agents}
+        selectedAgentId={selectedAgentId}
+        onChange={onAgentChange}
+      />
+      <div>
         {messages.map((message) => (
           <MessageBubble
             key={message.message_id}
@@ -47,10 +46,15 @@ export function ChatConsole({
           />
         ))}
         {streamState.content && (
-          <article className="message assistant streaming">
+          <article className="message assistant">
             <header>{selectedAgentId}</header>
             <p>{streamState.content}</p>
           </article>
+        )}
+        {streamState.phase === "cancelled" && (
+          <div className="error-panel">
+            Execução cancelada e encerrada.
+          </div>
         )}
         {streamState.error && (
           <div className="error-panel">
@@ -58,17 +62,23 @@ export function ChatConsole({
           </div>
         )}
       </div>
-
-      <form className="composer" onSubmit={submit}>
+      <form onSubmit={submit}>
         <textarea
           value={content}
           onChange={(event) => setContent(event.target.value)}
-          placeholder="Digite uma missão para o agente selecionado…"
           disabled={disabled}
         />
         <button type="submit" disabled={!canSend}>
           {disabled ? "Transmitindo…" : "Enviar"}
         </button>
+        {canCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+          >
+            Cancelar execução
+          </button>
+        )}
       </form>
     </section>
   );
