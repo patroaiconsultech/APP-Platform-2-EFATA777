@@ -1,6 +1,7 @@
 export class ApiError extends Error {
   constructor(code, message, status) {
     super(message);
+    this.name = "ApiError";
     this.code = code;
     this.status = status;
   }
@@ -9,9 +10,59 @@ export class ApiError extends Error {
 
 export function newRequestId() {
   if (globalThis.crypto?.randomUUID) {
-    return `request_${globalThis.crypto.randomUUID().replaceAll("-", "")}`;
+    return `request_${globalThis.crypto
+      .randomUUID()
+      .replaceAll("-", "")}`;
   }
-  return `request_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  return (
+    `request_${Date.now()}_` +
+    Math.random().toString(16).slice(2)
+  );
+}
+
+
+function parseErrorDetail(body, status) {
+  const detail = body?.error ?? body?.detail ?? {};
+  return new ApiError(
+    detail.code ?? "HTTP_ERROR",
+    detail.message ??
+      `Request failed with ${status}`,
+    status,
+  );
+}
+
+
+export function authHeaders(session) {
+  if (session?.mode === "oidc_introspection") {
+    if (!session.accessToken) {
+      throw new ApiError(
+        "AUTH_TOKEN_REQUIRED",
+        "A bearer access token is required.",
+        401,
+      );
+    }
+    return {
+      Authorization: `Bearer ${session.accessToken}`,
+    };
+  }
+
+  if (
+    session?.mode === "demo_headers" &&
+    session.tenantId &&
+    session.userId
+  ) {
+    return {
+      "X-Tenant-ID": session.tenantId,
+      "X-User-ID": session.userId,
+      "X-Role": session.role ?? "member",
+    };
+  }
+
+  throw new ApiError(
+    "AUTH_CONTEXT_REQUIRED",
+    "Authentication context is required.",
+    401,
+  );
 }
 
 
@@ -19,46 +70,90 @@ export function createApiClient({
   baseUrl,
   getSession,
   fetchImpl = globalThis.fetch,
+  onAuthFailure,
 }) {
   if (!baseUrl) throw new Error("API_BASE_URL_REQUIRED");
 
-  async function request(path, options = {}) {
-    const session = getSession();
-    if (!session?.tenantId || !session?.userId) {
-      throw new ApiError(
-        "AUTH_CONTEXT_REQUIRED",
-        "Tenant and user context are required.",
-        401,
-      );
+  async function request(
+    path,
+    {
+      requireAuth = true,
+      requestId,
+      headers,
+      ...options
+    } = {},
+  ) {
+    const session = getSession?.() ?? null;
+    let identityHeaders = {};
+    if (requireAuth) {
+      try {
+        identityHeaders = authHeaders(session);
+      } catch (error) {
+        onAuthFailure?.(error);
+        throw error;
+      }
     }
-    const requestId = options.requestId ?? newRequestId();
-    const response = await fetchImpl(`${baseUrl}${path}`, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        "X-Request-ID": requestId,
-        "X-Tenant-ID": session.tenantId,
-        "X-User-ID": session.userId,
-        "X-Role": session.role ?? "member",
-        ...(options.headers ?? {}),
+
+    const correlationId = requestId ?? newRequestId();
+    const requestHeaders = {
+      "X-Request-ID": correlationId,
+      ...identityHeaders,
+      ...(headers ?? {}),
+    };
+    if (options.body !== undefined) {
+      requestHeaders["Content-Type"] =
+        "application/json";
+    }
+
+    const response = await fetchImpl(
+      `${baseUrl}${path}`,
+      {
+        ...options,
+        headers: requestHeaders,
       },
-    });
-    const contentType = response.headers.get("content-type") ?? "";
-    const body = contentType.includes("application/json")
+    );
+
+    const contentType =
+      response.headers.get("content-type") ?? "";
+    const body = contentType.includes(
+      "application/json",
+    )
       ? await response.json()
       : await response.text();
+
     if (!response.ok) {
-      const detail = body?.error ?? body?.detail ?? {};
-      throw new ApiError(
-        detail.code ?? "HTTP_ERROR",
-        detail.message ?? `Request failed with ${response.status}`,
+      const error = parseErrorDetail(
+        body,
         response.status,
       );
+      if (
+        error.status === 401 ||
+        [
+          "AUTH_PROVIDER_REQUIRED",
+          "AUTH_CONTEXT_REQUIRED",
+          "AUTH_CONTEXT_INVALID",
+          "AUTH_CONTEXT_CONFLICT",
+          "AUTH_TOKEN_REQUIRED",
+          "AUTH_TOKEN_INVALID",
+          "AUTH_TOKEN_INACTIVE",
+          "AUTH_TOKEN_EXPIRED",
+          "DEMO_ADMIN_DISABLED",
+        ].includes(error.code)
+      ) {
+        onAuthFailure?.(error);
+      }
+      throw error;
     }
+
     return body;
   }
 
   return {
+    authStatus: () =>
+      request("/api/auth/status", {
+        requireAuth: false,
+      }),
+    me: () => request("/api/auth/me"),
     listAgents: () => request("/api/agents"),
     listThreads: () => request("/api/threads"),
     createThread: (title) =>
@@ -68,9 +163,14 @@ export function createApiClient({
       }),
     listMessages: (threadId) =>
       request(
-        `/api/threads/${encodeURIComponent(threadId)}/messages`,
+        `/api/threads/${encodeURIComponent(
+          threadId,
+        )}/messages`,
       ),
-    cancelExecution: (executionRequestId, reason) =>
+    cancelExecution: (
+      executionRequestId,
+      reason,
+    ) =>
       request(
         `/api/chat/executions/${encodeURIComponent(
           executionRequestId,
@@ -91,10 +191,15 @@ export function createApiClient({
         )}/recovery-decisions`,
         {
           method: "POST",
-          body: JSON.stringify({ decision, reason }),
+          body: JSON.stringify({
+            decision,
+            reason,
+          }),
         },
       ),
-    adminOverview: () => request("/api/admin/overview"),
-    governanceStatus: () => request("/api/governance/status"),
+    adminOverview: () =>
+      request("/api/admin/overview"),
+    governanceStatus: () =>
+      request("/api/governance/status"),
   };
 }

@@ -8,6 +8,7 @@ function makeClient(capture) {
   return createApiClient({
     baseUrl: "http://api.local",
     getSession: () => ({
+      mode: "demo_headers",
       tenantId: "tenant-a",
       userId: "user-a",
       role: "member",

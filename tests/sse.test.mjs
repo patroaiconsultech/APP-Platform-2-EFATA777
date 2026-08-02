@@ -44,6 +44,7 @@ test("incremental success requires agent_done and done", async () => {
       request_id: "r1",
     },
     session: {
+      mode: "demo_headers",
       tenantId: "tenant-a",
       userId: "user-a",
       role: "member",
@@ -71,6 +72,7 @@ test("cancelled plus done is a valid terminal flow", async () => {
       request_id: "r-cancel",
     },
     session: {
+      mode: "demo_headers",
       tenantId: "tenant-a",
       userId: "user-a",
       role: "member",
@@ -101,6 +103,7 @@ test("done without agent_done fails closed", async () => {
           request_id: "r1",
         },
         session: {
+          mode: "demo_headers",
           tenantId: "tenant-a",
           userId: "user-a",
           role: "member",
