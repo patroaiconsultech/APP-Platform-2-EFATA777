@@ -161,6 +161,14 @@ export function createApiClient({
         method: "POST",
         body: JSON.stringify({ title }),
       }),
+    renameThread: (threadId, title) =>
+      request(
+        `/api/threads/${encodeURIComponent(threadId)}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ title }),
+        },
+      ),
     listMessages: (threadId) =>
       request(
         `/api/threads/${encodeURIComponent(

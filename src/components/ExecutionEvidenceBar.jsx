@@ -77,6 +77,25 @@ export function ExecutionEvidenceBar({ state }) {
           value={state.ownerDisplayName ?? state.ownerAgent}
         />
         <EvidenceItem
+          label="Contrato owner"
+          value={state.ownerContract?.owner_contract}
+        />
+        <EvidenceItem
+          label="Contrato runtime"
+          value={state.ownerContract?.contract_version}
+        />
+        <EvidenceItem
+          label="Retry owner"
+          value={
+            state.ownerContract?.retry_count != null
+              ? String(state.ownerContract.retry_count)
+              : null
+          }
+          warning={
+            state.ownerContract?.status === "partial"
+          }
+        />
+        <EvidenceItem
           label="Terminal"
           value={terminalLabel}
           active={terminalComplete}

@@ -2,6 +2,7 @@ export function AgentPicker({
   agents,
   selectedAgentId,
   onChange,
+  disabled = false,
 }) {
   return (
     <label className="agent-picker">
@@ -11,7 +12,7 @@ export function AgentPicker({
         onChange={(event) =>
           onChange(event.target.value)
         }
-        disabled={agents.length === 0}
+        disabled={disabled || agents.length === 0}
       >
         {agents.length === 0 && (
           <option value="">

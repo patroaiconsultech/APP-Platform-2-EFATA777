@@ -89,3 +89,24 @@ test("recovery decision uses governed endpoint", async () => {
     },
   );
 });
+
+
+test("rename thread uses tenant-scoped PATCH endpoint", async () => {
+  const capture = {};
+  const client = makeClient(capture);
+  await client.renameThread(
+    "thread-alpha",
+    "Auditoria UX R0.6.4",
+  );
+  assert.equal(
+    capture.url,
+    "http://api.local/api/threads/thread-alpha",
+  );
+  assert.equal(capture.options.method, "PATCH");
+  assert.deepEqual(
+    JSON.parse(capture.options.body),
+    {
+      title: "Auditoria UX R0.6.4",
+    },
+  );
+});

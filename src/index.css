@@ -1435,3 +1435,208 @@ button:disabled {
     white-space: normal;
   }
 }
+
+/* R0.6.4 Premium Demo Excellence & Adaptive Coordination */
+.thread-sidebar {
+  position: relative;
+  max-height: calc(100vh - 108px);
+}
+
+.thread-sidebar-heading {
+  display: grid;
+  gap: 10px;
+}
+
+.thread-list {
+  flex: 1;
+  min-height: 120px;
+  padding-right: 2px;
+}
+
+.thread-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.thread-row .thread-button {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.thread-row .thread-button span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-edit-button {
+  padding: 0;
+  color: var(--muted);
+  background: rgba(24, 38, 61, 0.76);
+  border-color: var(--border);
+}
+
+.thread-edit-button:hover,
+.thread-edit-button:focus-visible {
+  color: var(--accent);
+  border-color: var(--border-strong);
+}
+
+.thread-rename-form {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: rgba(15, 28, 48, 0.94);
+}
+
+.thread-rename-form label,
+.thread-rename-form input {
+  width: 100%;
+}
+
+.thread-rename-form input {
+  padding: 9px 10px;
+  color: var(--text);
+  background: var(--panel-soft);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+
+.thread-rename-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.thread-rename-actions button {
+  padding: 7px 8px;
+  font-size: 0.72rem;
+}
+
+.thread-rename-error {
+  color: #ffd6df;
+  line-height: 1.35;
+}
+
+.sidebar-agent-controls {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+  margin: 0 -2px -2px;
+  border: 1px solid rgba(103, 217, 255, 0.24);
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(15, 29, 50, 0.98),
+      rgba(10, 20, 36, 0.99)
+    );
+  box-shadow:
+    0 -14px 30px rgba(4, 10, 20, 0.58),
+    0 0 22px rgba(55, 197, 255, 0.08);
+}
+
+.sidebar-agent-controls .agent-picker {
+  display: grid;
+  gap: 6px;
+}
+
+.sidebar-agent-controls .agent-picker span {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sidebar-agent-controls .agent-picker select {
+  width: 100%;
+  min-width: 0;
+}
+
+.sidebar-agent-controls .interaction-mode {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+}
+
+.sidebar-agent-controls .mode-button {
+  width: 100%;
+  text-align: left;
+}
+
+.agent-assigned-task {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(103, 217, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(8, 18, 32, 0.44);
+}
+
+.agent-assigned-task summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.agent-assigned-task p {
+  margin: 8px 0 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.agent-assigned-task small {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.notice-panel.partial-notice {
+  display: grid;
+  gap: 5px;
+  color: #ffe8ae;
+  border: 1px solid rgba(246, 196, 83, 0.38);
+  background: rgba(96, 68, 24, 0.48);
+}
+
+.notice-panel.partial-notice span,
+.notice-panel.partial-notice small {
+  color: #f7dfaa;
+}
+
+.stream-indicator.partial::before {
+  background: var(--gold);
+  box-shadow: 0 0 16px rgba(246, 196, 83, 0.66);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 760px) {
+  .thread-sidebar {
+    max-height: none;
+  }
+
+  .sidebar-agent-controls {
+    position: static;
+  }
+
+  .thread-list {
+    max-height: 220px;
+  }
+}

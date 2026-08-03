@@ -57,6 +57,16 @@ function AgentCard({ item }) {
         </p>
       )}
 
+      {item.assignedTask && (
+        <details className="agent-assigned-task">
+          <summary>Tarefa isolada</summary>
+          <p>{item.assignedTask}</p>
+          {item.taskSliceVersion && (
+            <small>{item.taskSliceVersion}</small>
+          )}
+        </details>
+      )}
+
       {detail && <p className="agent-contract-detail">{detail}</p>}
 
       {(

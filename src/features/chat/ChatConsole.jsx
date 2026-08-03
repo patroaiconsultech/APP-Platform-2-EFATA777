@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 
-import { AgentPicker } from "../../components/AgentPicker.jsx";
 import {
   AgentActivityPanel,
 } from "../../components/AgentActivityPanel.jsx";
@@ -10,9 +9,6 @@ import {
 import {
   ExecutionEvidenceBar,
 } from "../../components/ExecutionEvidenceBar.jsx";
-import {
-  InteractionModePicker,
-} from "../../components/InteractionModePicker.jsx";
 import { MessageBubble } from "../../components/MessageBubble.jsx";
 import {
   shouldSuggestRoundtable,
@@ -30,6 +26,7 @@ function phaseLabel(phase, realtimeEnabled) {
       : "Executando";
   }
   if (phase === "done") return "Concluído";
+  if (phase === "partial") return "Parcial";
   if (phase === "error") return "Falha";
   if (phase === "cancelled") return "Cancelado";
   return "Pronto";
@@ -37,10 +34,8 @@ function phaseLabel(phase, realtimeEnabled) {
 
 
 export function ChatConsole({
-  agents,
   capabilities,
   selectedAgentId,
-  onAgentChange,
   interactionMode,
   onInteractionModeChange,
   realtimeEnabled,
@@ -100,20 +95,6 @@ export function ChatConsole({
   return (
     <section className="chat-console panel">
       <div className="chat-toolbar premium-toolbar">
-        <div className="toolbar-primary">
-          <AgentPicker
-            agents={agents}
-            selectedAgentId={selectedAgentId}
-            onChange={onAgentChange}
-          />
-          <InteractionModePicker
-            value={interactionMode}
-            onChange={onInteractionModeChange}
-            selectedAgentId={selectedAgentId}
-            disabled={isBusy}
-          />
-        </div>
-
         <div className="runtime-controls">
           <button
             type="button"
@@ -215,6 +196,21 @@ export function ChatConsole({
         {streamState.phase === "cancelled" && (
           <div className="notice-panel warning">
             Execução cancelada e encerrada com evento terminal.
+          </div>
+        )}
+
+        {streamState.phase === "partial" && (
+          <div className="notice-panel partial-notice">
+            <strong>Síntese parcial.</strong>
+            <span>
+              As contribuições validadas foram preservadas.
+              A tentativa automática repetiu somente a síntese de Orkio.
+            </span>
+            {streamState.partialReason && (
+              <small>
+                Motivo: {streamState.partialReason}
+              </small>
+            )}
           </div>
         )}
 

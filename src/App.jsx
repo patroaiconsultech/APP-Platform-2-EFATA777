@@ -48,6 +48,28 @@ const runtime = getRuntimeConfig(import.meta.env);
 const sessionStore = createSessionStore();
 
 
+function executionErrorMessage(error) {
+  const code = error?.code ?? "CHAT_FAILED";
+  const messages = {
+    OWNER_CONTRACT_VIOLATION:
+      "A síntese de Orkio foi bloqueada porque misturou conteúdo dos especialistas.",
+    OWNER_CONTRACT_PARTIAL:
+      "A síntese final não passou no contrato adaptativo; as contribuições foram preservadas.",
+    SSE_TIMEOUT:
+      "O stream excedeu o limite e foi encerrado.",
+    THREAD_TITLE_REQUIRED:
+      "Informe um título válido para a conversa.",
+    THREAD_NOT_FOUND:
+      "A conversa não foi encontrada neste tenant.",
+  };
+  return (
+    messages[code] ??
+    error?.message ??
+    "A execução não pôde ser concluída."
+  );
+}
+
+
 export default function App() {
   const [session, setSession] = useState(
     () => sessionStore.load(),
@@ -418,6 +440,31 @@ export default function App() {
     }
   }
 
+  async function renameThread(threadId, title) {
+    try {
+      const updated = await api.renameThread(
+        threadId,
+        title,
+      );
+      setThreads((current) =>
+        current.map((thread) =>
+          thread.thread_id === threadId
+            ? updated
+            : thread,
+        ),
+      );
+      return updated;
+    } catch (error) {
+      if (isAuthFailure(error)) return null;
+      throw new Error(
+        executionErrorMessage({
+          code: error.code ?? "THREAD_RENAME_FAILED",
+          message: error.message,
+        }),
+      );
+    }
+  }
+
   function changeAgent(agentId) {
     setSelectedAgentId(agentId);
     if (
@@ -487,7 +534,7 @@ export default function App() {
       requestId,
       interactionMode,
       transport: realtimeEnabled ? "sse" : "http_json",
-      terminalSource: realtimeEnabled ? "wire" : "envelope",
+      terminalSource: realtimeEnabled ? null : "envelope",
     });
     setMessages((current) => [
       ...current,
@@ -517,11 +564,27 @@ export default function App() {
         const response = await api.completeChat(payload);
         setStreamState({
           ...createTerminalState(),
-          phase: "done",
+          phase:
+            response.status === "partial"
+              ? "partial"
+              : response.status === "cancelled"
+                ? "cancelled"
+                : response.status === "error"
+                  ? "error"
+                  : "done",
           terminal: true,
           agentDone: false,
           agentDoneObserved: false,
           doneObserved: false,
+          partial: response.status === "partial",
+          partialReason:
+            response.status === "partial"
+              ? response.error?.code ?? "EXECUTION_PARTIAL"
+              : null,
+          error:
+            response.status === "error"
+              ? response.error
+              : null,
           transport: "http_json",
           terminalSource: "envelope",
           eventCount: 0,
@@ -534,6 +597,7 @@ export default function App() {
           ownershipLocked: true,
           realtimeStreaming: false,
           assistantMessage: response,
+          ownerContract: response.owner_contract ?? null,
           tokenUsage: response.token_usage ?? null,
           latencyMs: response.latency_ms ?? null,
           interactionMode:
@@ -553,6 +617,11 @@ export default function App() {
             latencyMs: item.latency_ms ?? null,
             budgetExceeded: item.budget_exceeded ?? false,
             contractVersion: item.contract_version ?? null,
+            assignedTask: item.assigned_task ?? null,
+            taskSliceVersion:
+              item.task_slice_version ?? null,
+            explicitAssignment:
+              item.explicit_assignment ?? false,
           })),
         });
       }
@@ -569,10 +638,13 @@ export default function App() {
             error.name === "AbortError"
               ? "SSE_TIMEOUT"
               : error.code ?? "CHAT_FAILED",
-          message:
-            error.name === "AbortError"
-              ? "O stream excedeu o limite."
-              : error.message,
+          message: executionErrorMessage({
+            code:
+              error.name === "AbortError"
+                ? "SSE_TIMEOUT"
+                : error.code ?? "CHAT_FAILED",
+            message: error.message,
+          }),
         },
       }));
       await refreshMessages(
@@ -651,7 +723,7 @@ export default function App() {
           <div className="brand-copy">
             <p className="eyebrow">PATROAI · INTELLIGENCE OS</p>
             <h1>ORKIO Command Center</h1>
-            <p>Premium Agent Integrity & Wire Evidence R0.6.3</p>
+            <p>Premium Demo Excellence & Adaptive Coordination R0.6.4</p>
           </div>
         </div>
 
@@ -683,13 +755,21 @@ export default function App() {
           activeThreadId={activeThreadId}
           onSelect={setActiveThreadId}
           onCreate={createThread}
+          onRename={renameThread}
+          agents={agents}
+          selectedAgentId={selectedAgentId}
+          onAgentChange={changeAgent}
+          interactionMode={interactionMode}
+          onInteractionModeChange={setInteractionMode}
+          controlsDisabled={[
+            "connecting",
+            "streaming",
+          ].includes(streamState.phase)}
         />
 
         <ChatConsole
-          agents={agents}
           capabilities={capabilities}
           selectedAgentId={selectedAgentId}
-          onAgentChange={changeAgent}
           interactionMode={interactionMode}
           onInteractionModeChange={setInteractionMode}
           realtimeEnabled={realtimeEnabled}

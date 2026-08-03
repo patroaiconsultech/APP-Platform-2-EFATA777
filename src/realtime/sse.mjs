@@ -64,7 +64,10 @@ export function createTerminalState() {
     transport: null,
     terminalSource: null,
     cancelled: false,
+    partial: false,
+    partialReason: null,
     assistantMessage: null,
+    ownerContract: null,
     tokenUsage: null,
     latencyMs: null,
   };
@@ -125,6 +128,18 @@ function normalizeContribution(payload, previous = {}) {
       payload.contract_version ??
       previous.contractVersion ??
       null,
+    assignedTask:
+      payload.assigned_task ??
+      previous.assignedTask ??
+      null,
+    taskSliceVersion:
+      payload.task_slice_version ??
+      previous.taskSliceVersion ??
+      null,
+    explicitAssignment:
+      payload.explicit_assignment ??
+      previous.explicitAssignment ??
+      false,
   };
 }
 
@@ -283,6 +298,33 @@ export function reduceSSEEvent(state, event) {
     next.latencyMs =
       next.assistantMessage?.latency_ms ??
       state.latencyMs;
+    next.ownerContract =
+      next.assistantMessage?.owner_contract ??
+      state.ownerContract;
+  } else if (type === "partial") {
+    next.partial = true;
+    next.phase = "partial";
+    next.partialReason =
+      payload.reason ??
+      event.data?.reason ??
+      "EXECUTION_PARTIAL";
+    next.assistantMessage =
+      payload.message ??
+      event.data?.message ??
+      null;
+    next.contributors = mergeTerminalContributions(
+      state.contributors,
+      next.assistantMessage,
+    );
+    next.tokenUsage =
+      next.assistantMessage?.token_usage ??
+      state.tokenUsage;
+    next.latencyMs =
+      next.assistantMessage?.latency_ms ??
+      state.latencyMs;
+    next.ownerContract =
+      next.assistantMessage?.owner_contract ??
+      state.ownerContract;
   } else if (type === "error") {
     next.error =
       payload.error ??
@@ -311,7 +353,9 @@ export function reduceSSEEvent(state, event) {
       ? "error"
       : next.cancelled || outcome === "cancelled"
         ? "cancelled"
-        : "done";
+        : next.partial || outcome === "partial"
+          ? "partial"
+          : "done";
   }
 
   return next;
@@ -345,6 +389,13 @@ export function summarizeTerminalEvidence(state) {
         warning: false,
       };
     }
+    if (state.partial) {
+      return {
+        label: "partial + done",
+        complete: true,
+        warning: true,
+      };
+    }
     if (state.cancelled) {
       return {
         label: "cancelled + done",
@@ -372,7 +423,9 @@ export function summarizeTerminalEvidence(state) {
         ? "envelope error"
         : state.cancelled
           ? "envelope cancelled"
-          : "envelope success",
+          : state.partial || state.assistantMessage?.status === "partial"
+            ? "envelope partial"
+            : "envelope success",
       complete: true,
       warning: false,
     };

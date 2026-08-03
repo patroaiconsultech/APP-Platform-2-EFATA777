@@ -183,7 +183,7 @@ test("persisted roundtable headings accept role descriptors", () => {
 });
 
 
-test("R0.6.3 evidence UI exposes truthful transport fields", async () => {
+test("R0.6.4 evidence UI exposes truthful transport fields", async () => {
   const source = await import("node:fs/promises");
   const evidence = await source.readFile(
     new URL(
@@ -209,5 +209,5 @@ test("R0.6.3 evidence UI exposes truthful transport fields", async () => {
   assert.match(evidence, /Fonte terminal/);
   assert.match(activity, /Bloqueado por contrato/);
   assert.match(activity, /Recusado/);
-  assert.match(index, /Premium R0\.6\.3/);
+  assert.match(index, /Premium R0\.6\.4/);
 });

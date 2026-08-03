@@ -88,7 +88,7 @@ test("premium source exposes evidence and capability surfaces", async () => {
 });
 
 
-test("release identity is R0.6.3 agent integrity candidate", async () => {
+test("release identity is R0.6.4 demo excellence candidate", async () => {
   const identity = JSON.parse(
     await readFile(
       new URL("../release-identity.json", import.meta.url),
@@ -96,10 +96,10 @@ test("release identity is R0.6.3 agent integrity candidate", async () => {
     ),
   );
 
-  assert.equal(identity.release_version, "0.6.3");
+  assert.equal(identity.release_version, "0.6.4");
   assert.equal(
     identity.release_id,
-    "ORKIO-PREMIUM-AGENT-INTEGRITY-R0-6-3",
+    "ORKIO-PREMIUM-DEMO-EXCELLENCE-R0-6-4",
   );
   assert.equal(identity.channel, "audit-candidate");
 });
