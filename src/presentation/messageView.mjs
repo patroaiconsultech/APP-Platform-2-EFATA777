@@ -1,5 +1,11 @@
 const ROUND_TABLE_HEADING =
-  /^###\s+(Orkio|Orion|Chris|Laura)\s*$/gim;
+  /^[ \t]{0,3}#{1,6}[ \t]+(?:\*\*|__)?(Orkio|Orion|Chris|Laura)(?:\*\*|__)?[ \t]*(?:(?::|[-–—])[ \t]*[^\n]*)?[ \t]*$/gim;
+
+const CANONICAL_AGENT = new Map(
+  ["Orkio", "Orion", "Chris", "Laura"].map(
+    (name) => [name.toLocaleLowerCase("en-US"), name],
+  ),
+);
 
 const ROUND_TABLE_INTENT =
   /\b(cada\s+(agente|um)|todos\s+os\s+agentes|individualmente|each\s+agent|individually)\b/i;
@@ -45,7 +51,10 @@ export function parseRoundtableSections(content) {
       const end =
         matches[index + 1]?.index ?? content.length;
       return {
-        agentId: match[1],
+        agentId:
+          CANONICAL_AGENT.get(
+            match[1].toLocaleLowerCase("en-US"),
+          ) ?? match[1],
         content: content.slice(start, end).trim(),
       };
     })

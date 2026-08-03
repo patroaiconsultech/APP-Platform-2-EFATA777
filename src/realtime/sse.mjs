@@ -44,6 +44,7 @@ export function createTerminalState() {
   return {
     phase: "idle",
     events: [],
+    eventCount: 0,
     content: "",
     lastEventId: null,
     requestId: null,
@@ -58,6 +59,10 @@ export function createTerminalState() {
     error: null,
     terminal: false,
     agentDone: false,
+    agentDoneObserved: false,
+    doneObserved: false,
+    transport: null,
+    terminalSource: null,
     cancelled: false,
     assistantMessage: null,
     tokenUsage: null,
@@ -94,13 +99,32 @@ function normalizeContribution(payload, previous = {}) {
       payload.agent_id ??
       "Agente",
     status:
-      payload.phase === "node_completed"
-        ? "success"
-        : payload.status ?? previous.status ?? "running",
+      payload.status ??
+      (
+        payload.phase === "node_completed"
+          ? "success"
+          : previous.status ?? "running"
+      ),
+    statusReason:
+      payload.status_reason ??
+      previous.statusReason ??
+      null,
     content: payload.content ?? previous.content ?? "",
     model: payload.model ?? previous.model ?? null,
     provider: payload.provider ?? previous.provider ?? null,
     tokenUsage: payload.token_usage ?? previous.tokenUsage ?? null,
+    retryCount:
+      payload.retry_count ?? previous.retryCount ?? 0,
+    latencyMs:
+      payload.latency_ms ?? previous.latencyMs ?? null,
+    budgetExceeded:
+      payload.budget_exceeded ??
+      previous.budgetExceeded ??
+      false,
+    contractVersion:
+      payload.contract_version ??
+      previous.contractVersion ??
+      null,
   };
 }
 
@@ -148,11 +172,15 @@ export function reduceSSEEvent(state, event) {
 
   const payload = eventPayload(event);
   const type = effectiveEventType(event);
+  const nextEvents = [...state.events, event];
   const next = {
     ...state,
     phase: "streaming",
-    events: [...state.events, event],
+    events: nextEvents,
+    eventCount: nextEvents.length,
     lastEventId: event.id ?? state.lastEventId,
+    transport: state.transport ?? "sse",
+    terminalSource: state.terminalSource,
   };
 
   if (type === "execution") {
@@ -237,6 +265,9 @@ export function reduceSSEEvent(state, event) {
     );
   } else if (type === "agent_done") {
     next.agentDone = true;
+    next.agentDoneObserved = true;
+    next.transport = "sse";
+    next.terminalSource = state.terminalSource;
     next.assistantMessage =
       payload.message ??
       event.data?.message ??
@@ -271,6 +302,11 @@ export function reduceSSEEvent(state, event) {
       event.data?.outcome ??
       null;
     next.terminal = true;
+    next.doneObserved = true;
+    next.transport = "sse";
+    next.terminalSource = "wire";
+    next.eventCount = next.events.length;
+    next.lastEventId = event.id ?? next.lastEventId;
     next.phase = next.error
       ? "error"
       : next.cancelled || outcome === "cancelled"
@@ -279,6 +315,74 @@ export function reduceSSEEvent(state, event) {
   }
 
   return next;
+}
+
+
+export function summarizeTerminalEvidence(state) {
+  const eventCount =
+    state.eventCount ?? state.events?.length ?? 0;
+
+  if (!state.terminal) {
+    return {
+      label: "aguardando terminal",
+      complete: false,
+      warning: false,
+    };
+  }
+
+  if (state.transport === "sse") {
+    if (!state.doneObserved) {
+      return {
+        label: "SSE sem done",
+        complete: false,
+        warning: true,
+      };
+    }
+    if (state.error) {
+      return {
+        label: "error + done",
+        complete: true,
+        warning: false,
+      };
+    }
+    if (state.cancelled) {
+      return {
+        label: "cancelled + done",
+        complete: true,
+        warning: false,
+      };
+    }
+    if (state.agentDoneObserved && eventCount > 0) {
+      return {
+        label: "agent_done + done",
+        complete: true,
+        warning: false,
+      };
+    }
+    return {
+      label: "done sem agent_done",
+      complete: false,
+      warning: true,
+    };
+  }
+
+  if (state.transport === "http_json") {
+    return {
+      label: state.error
+        ? "envelope error"
+        : state.cancelled
+          ? "envelope cancelled"
+          : "envelope success",
+      complete: true,
+      warning: false,
+    };
+  }
+
+  return {
+    label: "terminal não comprovado",
+    complete: false,
+    warning: true,
+  };
 }
 
 
@@ -346,9 +450,25 @@ export async function consumeSSE({
     throw parseError(body, response.status);
   }
 
+  const declaredContentType =
+    response.headers?.get?.("content-type") ?? null;
+  if (
+    declaredContentType !== null &&
+    !declaredContentType
+      .toLowerCase()
+      .includes("text/event-stream")
+  ) {
+    throw terminalError(
+      "SSE_CONTENT_TYPE_INVALID",
+      "The endpoint did not return text/event-stream.",
+    );
+  }
+
   let state = {
     ...createTerminalState(),
     phase: "streaming",
+    transport: "sse",
+    terminalSource: null,
     requestId: payload.request_id ?? null,
     interactionMode:
       payload.interaction_mode ?? "single",
@@ -399,7 +519,7 @@ export async function consumeSSE({
     );
   }
 
-  if (!state.terminal) {
+  if (!state.terminal || !state.doneObserved) {
     throw terminalError(
       "SSE_TERMINAL_EVENT_MISSING",
       "SSE_TERMINAL_EVENT_MISSING: The stream ended without a terminal done event.",
@@ -409,7 +529,7 @@ export async function consumeSSE({
   if (
     !state.error &&
     !state.cancelled &&
-    !state.agentDone
+    !state.agentDoneObserved
   ) {
     throw terminalError(
       "SSE_AGENT_DONE_MISSING",

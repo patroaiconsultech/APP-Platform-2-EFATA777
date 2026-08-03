@@ -804,6 +804,40 @@ button:disabled {
   border-color: rgba(104, 224, 178, 0.32);
 }
 
+.agent-activity-card.refused,
+.agent-activity-card.contract_violation {
+  border-color: rgba(255, 210, 122, 0.45);
+  background: rgba(49, 35, 16, 0.72);
+}
+
+.agent-activity-card.failed,
+.agent-activity-card.error {
+  border-color: rgba(255, 112, 112, 0.5);
+  background: rgba(53, 17, 24, 0.7);
+}
+
+.agent-activity-card.refused .agent-status-dot,
+.agent-activity-card.contract_violation .agent-status-dot {
+  background: var(--warning);
+  box-shadow: 0 0 12px rgba(255, 210, 122, 0.52);
+}
+
+.agent-activity-card.failed .agent-status-dot,
+.agent-activity-card.error .agent-status-dot {
+  background: #ff7070;
+  box-shadow: 0 0 12px rgba(255, 112, 112, 0.5);
+}
+
+.agent-contract-detail {
+  color: var(--warning) !important;
+  font-size: 0.72rem !important;
+}
+
+.evidence-item.warning {
+  border-color: rgba(255, 210, 122, 0.45);
+  color: var(--warning);
+}
+
 .agent-activity-card header {
   display: flex;
   align-items: center;

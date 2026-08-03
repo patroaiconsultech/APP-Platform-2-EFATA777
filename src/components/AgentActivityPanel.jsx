@@ -1,11 +1,35 @@
 function statusLabel(status) {
   if (status === "success") return "Concluído";
-  if (status === "error") return "Falhou";
+  if (status === "refused") return "Recusado";
+  if (status === "contract_violation") {
+    return "Bloqueado por contrato";
+  }
+  if (status === "failed" || status === "error") {
+    return "Falhou";
+  }
   return "Analisando";
 }
 
 
+function fallbackContent(item) {
+  if (item.status === "refused") {
+    return "O agente recusou a contribuição; não foi marcada como sucesso.";
+  }
+  if (item.status === "contract_violation") {
+    return "A contribuição foi bloqueada por violação do contrato de autoria.";
+  }
+  if (item.status === "failed" || item.status === "error") {
+    return "A contribuição não ficou disponível por falha controlada.";
+  }
+  return "Preparando contribuição especializada…";
+}
+
+
 function AgentCard({ item }) {
+  const detail = item.statusReason
+    ? `Motivo: ${item.statusReason}`
+    : null;
+
   return (
     <article
       className={`agent-activity-card ${item.status ?? "running"}`}
@@ -29,17 +53,37 @@ function AgentCard({ item }) {
         <p>{item.content}</p>
       ) : (
         <p className="agent-working">
-          Preparando contribuição especializada…
+          {fallbackContent(item)}
         </p>
       )}
 
-      {(item.model || item.tokenUsage) && (
+      {detail && <p className="agent-contract-detail">{detail}</p>}
+
+      {(
+        item.model ||
+        item.tokenUsage ||
+        item.retryCount ||
+        item.latencyMs != null ||
+        item.contractVersion
+      ) && (
         <footer>
           {item.model && <span>{item.model}</span>}
           {item.tokenUsage?.total_tokens != null && (
             <span>
               {item.tokenUsage.total_tokens} tokens
             </span>
+          )}
+          {item.retryCount > 0 && (
+            <span>{item.retryCount} retry</span>
+          )}
+          {item.latencyMs != null && (
+            <span>{item.latencyMs} ms</span>
+          )}
+          {item.contractVersion && (
+            <span>{item.contractVersion}</span>
+          )}
+          {item.budgetExceeded && (
+            <span>budget excedido</span>
           )}
         </footer>
       )}

@@ -442,6 +442,9 @@ export default function App() {
         phase: "cancelled",
         terminal: true,
         cancelled: true,
+        transport: "http_json",
+        terminalSource: "envelope",
+        doneObserved: false,
         assistantMessage: cancelled,
       }));
       await refreshMessages(activeThreadId);
@@ -483,6 +486,8 @@ export default function App() {
       phase: "connecting",
       requestId,
       interactionMode,
+      transport: realtimeEnabled ? "sse" : "http_json",
+      terminalSource: realtimeEnabled ? "wire" : "envelope",
     });
     setMessages((current) => [
       ...current,
@@ -514,7 +519,12 @@ export default function App() {
           ...createTerminalState(),
           phase: "done",
           terminal: true,
-          agentDone: true,
+          agentDone: false,
+          agentDoneObserved: false,
+          doneObserved: false,
+          transport: "http_json",
+          terminalSource: "envelope",
+          eventCount: 0,
           requestId,
           executionId: response.execution_id ?? null,
           routeFamily: response.route_family ?? null,
@@ -534,10 +544,15 @@ export default function App() {
             agentId: item.agent_id,
             displayName: item.display_name,
             status: item.status ?? "success",
+            statusReason: item.status_reason ?? null,
             content: item.content ?? "",
             model: item.model ?? null,
             provider: item.provider ?? null,
             tokenUsage: item.token_usage ?? null,
+            retryCount: item.retry_count ?? 0,
+            latencyMs: item.latency_ms ?? null,
+            budgetExceeded: item.budget_exceeded ?? false,
+            contractVersion: item.contract_version ?? null,
           })),
         });
       }
@@ -636,7 +651,7 @@ export default function App() {
           <div className="brand-copy">
             <p className="eyebrow">PATROAI · INTELLIGENCE OS</p>
             <h1>ORKIO Command Center</h1>
-            <p>Premium Quality & Audit Experience R0.6.2</p>
+            <p>Premium Agent Integrity & Wire Evidence R0.6.3</p>
           </div>
         </div>
 
