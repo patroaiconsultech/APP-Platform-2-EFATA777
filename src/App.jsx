@@ -723,7 +723,7 @@ export default function App() {
           <div className="brand-copy">
             <p className="eyebrow">PATROAI · INTELLIGENCE OS</p>
             <h1>ORKIO Command Center</h1>
-            <p>Premium Demo Excellence & Adaptive Coordination R0.6.4</p>
+            <p>Premium Responsive Containment & Tenant Truth R0.6.5</p>
           </div>
         </div>
 

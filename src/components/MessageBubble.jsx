@@ -53,11 +53,13 @@ export function MessageBubble({ message }) {
         )}
       </header>
 
-      {sections.length ? (
-        <RoundtableContent sections={sections} />
-      ) : (
-        <p>{safe.content}</p>
-      )}
+      <div className="message-content">
+        {sections.length ? (
+          <RoundtableContent sections={sections} />
+        ) : (
+          <p>{safe.content}</p>
+        )}
+      </div>
     </article>
   );
 }

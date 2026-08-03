@@ -59,7 +59,8 @@ export function AdminPanel({
         </div>
       </div>
 
-      <div className="metric-grid premium-metrics">
+      <div className="admin-panel-body">
+        <div className="metric-grid premium-metrics">
         <MetricCard
           label="Threads"
           value={overview.stats?.threads}
@@ -224,11 +225,12 @@ export function AdminPanel({
         />
       </div>
 
-      <p className="admin-disclaimer">
-        Este painel mostra somente evidências disponíveis no
-        tenant atual. trace_lite não representa grafo persistente.
-        Capacidades planejadas não estão disponíveis para execução.
-      </p>
+        <p className="admin-disclaimer">
+          Este painel mostra somente evidências disponíveis no
+          tenant atual. trace_lite não representa grafo persistente.
+          Capacidades planejadas não estão disponíveis para execução.
+        </p>
+      </div>
     </aside>
   );
 }

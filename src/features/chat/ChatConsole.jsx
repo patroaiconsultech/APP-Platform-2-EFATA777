@@ -189,7 +189,9 @@ export function ChatConsole({
                 selectedAgentId}
               <span className="live-pill">LIVE</span>
             </header>
-            <p>{streamState.content}</p>
+            <div className="message-content">
+              <p>{streamState.content}</p>
+            </div>
           </article>
         )}
 

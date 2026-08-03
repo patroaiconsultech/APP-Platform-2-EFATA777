@@ -1640,3 +1640,215 @@ button:disabled {
     max-height: 220px;
   }
 }
+
+/* R0.6.5 Premium Responsive Containment & Tenant Truth */
+.workspace > *,
+.admin-workspace > *,
+.control-column,
+.chat-console,
+.message-list,
+.agent-activity-panel,
+.agent-activity-grid,
+.execution-evidence-bar,
+.execution-evidence-items,
+.capability-proof-panel,
+.admin-panel,
+.admin-panel-body,
+.evolution-panel {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.message-list {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.message,
+.streaming-message,
+.roundtable-message-grid,
+.roundtable-message-card,
+.message-content,
+.agent-activity-card,
+.agent-assigned-task,
+.evidence-item,
+.runtime-row,
+.metric-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.message,
+.streaming-message,
+.roundtable-message-card,
+.agent-activity-card,
+.admin-panel,
+.evolution-panel {
+  overflow: hidden;
+}
+
+.message-content,
+.message-content *,
+.roundtable-message-card,
+.roundtable-message-card *,
+.agent-activity-card p,
+.agent-activity-card summary,
+.agent-activity-card footer,
+.agent-activity-card footer span,
+.agent-assigned-task,
+.agent-assigned-task *,
+.evidence-item strong,
+.runtime-row strong,
+.metric-card strong,
+.admin-disclaimer,
+.proposal-card,
+.proposal-card * {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.message-content {
+  width: 100%;
+}
+
+.message-content p,
+.message-content pre,
+.message-content code,
+.roundtable-message-card p,
+.agent-activity-card p {
+  white-space: pre-wrap;
+}
+
+.message-content pre,
+.message-content code {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.admin-panel-body {
+  width: 100%;
+}
+
+.runtime-row span,
+.runtime-row strong {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .app-header {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .brand-block,
+  .brand-copy,
+  .header-session {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .header-session {
+    justify-content: flex-start;
+  }
+
+  .session-chip {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .workspace,
+  .admin-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 8px;
+  }
+
+  .workspace > *,
+  .admin-workspace > * {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-workspace .thread-sidebar {
+    order: 1;
+  }
+
+  .admin-workspace .control-column {
+    order: 2;
+    grid-column: auto;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .admin-workspace .chat-console {
+    order: 3;
+  }
+
+  .admin-panel,
+  .evolution-panel {
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+  }
+
+  .admin-panel-body {
+    max-height: min(68vh, 680px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    padding-right: 2px;
+  }
+
+  .premium-metrics,
+  .capability-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .runtime-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 3px;
+  }
+
+  .runtime-row strong {
+    text-align: left;
+  }
+
+  .panel-heading,
+  .proposal-card header,
+  .proposal-card footer {
+    min-width: 0;
+  }
+
+  .message {
+    max-width: 96%;
+  }
+}
+
+@media (max-width: 420px) {
+  .premium-metrics,
+  .capability-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .message {
+    max-width: 100%;
+    padding: 12px;
+  }
+
+  .message-list {
+    padding: 12px;
+  }
+
+  .execution-evidence-bar,
+  .agent-activity-panel,
+  .capability-proof-panel summary {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
