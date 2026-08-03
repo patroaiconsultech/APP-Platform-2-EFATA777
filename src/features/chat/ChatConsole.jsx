@@ -5,9 +5,18 @@ import {
   AgentActivityPanel,
 } from "../../components/AgentActivityPanel.jsx";
 import {
+  CapabilityProofPanel,
+} from "../../components/CapabilityProofPanel.jsx";
+import {
+  ExecutionEvidenceBar,
+} from "../../components/ExecutionEvidenceBar.jsx";
+import {
   InteractionModePicker,
 } from "../../components/InteractionModePicker.jsx";
 import { MessageBubble } from "../../components/MessageBubble.jsx";
+import {
+  shouldSuggestRoundtable,
+} from "../../presentation/messageView.mjs";
 import {
   resolveComposerState,
 } from "./composerState.mjs";
@@ -20,6 +29,7 @@ function phaseLabel(phase, realtimeEnabled) {
       ? "Realtime ativo"
       : "Executando";
   }
+  if (phase === "done") return "Concluído";
   if (phase === "error") return "Falha";
   if (phase === "cancelled") return "Cancelado";
   return "Pronto";
@@ -28,6 +38,7 @@ function phaseLabel(phase, realtimeEnabled) {
 
 export function ChatConsole({
   agents,
+  capabilities,
   selectedAgentId,
   onAgentChange,
   interactionMode,
@@ -62,6 +73,11 @@ export function ChatConsole({
   );
   const canCancel =
     Boolean(streamState.requestId) && isBusy;
+  const roundtableSuggested = shouldSuggestRoundtable({
+    content,
+    selectedAgentId,
+    interactionMode,
+  });
 
   async function submit(event) {
     event.preventDefault();
@@ -139,14 +155,41 @@ export function ChatConsole({
             )}
           </span>
         </div>
+
+        {roundtableSuggested && (
+          <div className="mode-suggestion">
+            <span>
+              Este pedido parece exigir respostas individuais.
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                onInteractionModeChange("roundtable")
+              }
+            >
+              Usar Mesa redonda
+            </button>
+          </div>
+        )}
       </div>
 
       <AgentActivityPanel
         contributors={streamState.contributors}
         ownerAgent={streamState.ownerAgent}
         ownerDisplayName={streamState.ownerDisplayName}
-        interactionMode={interactionMode}
+        interactionMode={
+          streamState.requestId
+            ? streamState.interactionMode
+            : interactionMode
+        }
         phase={streamState.phase}
+      />
+
+      <ExecutionEvidenceBar state={streamState} />
+
+      <CapabilityProofPanel
+        capabilities={capabilities}
+        selectedAgentId={selectedAgentId}
       />
 
       <div className="message-list">
@@ -157,7 +200,7 @@ export function ChatConsole({
           />
         ))}
 
-        {streamState.content && (
+        {streamState.content && isBusy && (
           <article className="message assistant streaming-message">
             <header>
               {streamState.ownerDisplayName ??

@@ -1,6 +1,27 @@
 import {
   normalizeMessage,
 } from "../contracts/message.mjs";
+import {
+  formatMessageTimestamp,
+  parseRoundtableSections,
+} from "../presentation/messageView.mjs";
+
+
+function RoundtableContent({ sections }) {
+  return (
+    <div className="roundtable-message-grid">
+      {sections.map((section, index) => (
+        <section
+          className="roundtable-message-card"
+          key={`${section.agentId}-${index}`}
+        >
+          <strong>{section.agentId}</strong>
+          <p>{section.content}</p>
+        </section>
+      ))}
+    </div>
+  );
+}
 
 
 export function MessageBubble({ message }) {
@@ -9,15 +30,34 @@ export function MessageBubble({ message }) {
     safe.role === "assistant"
       ? "message assistant"
       : "message user";
+  const timestamp = formatMessageTimestamp(
+    safe.created_at,
+  );
+  const sections =
+    safe.role === "assistant"
+      ? parseRoundtableSections(safe.content)
+      : [];
 
   return (
     <article className={className}>
-      <header>
-        {safe.role === "assistant"
-          ? safe.display_name
-          : "Você"}
+      <header className="message-header">
+        <span>
+          {safe.role === "assistant"
+            ? safe.display_name
+            : "Você"}
+        </span>
+        {timestamp && (
+          <time dateTime={safe.created_at}>
+            {timestamp}
+          </time>
+        )}
       </header>
-      <p>{safe.content}</p>
+
+      {sections.length ? (
+        <RoundtableContent sections={sections} />
+      ) : (
+        <p>{safe.content}</p>
+      )}
     </article>
   );
 }

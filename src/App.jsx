@@ -500,13 +500,14 @@ export default function App() {
 
     try {
       if (realtimeEnabled) {
-        await consumeSSE({
+        const terminalState = await consumeSSE({
           url: `${runtime.apiBaseUrl}/api/chat/stream`,
           payload,
           session,
           signal: controller.signal,
           onState: setStreamState,
         });
+        setStreamState(terminalState);
       } else {
         const response = await api.completeChat(payload);
         setStreamState({
@@ -514,7 +515,17 @@ export default function App() {
           phase: "done",
           terminal: true,
           agentDone: true,
+          requestId,
+          executionId: response.execution_id ?? null,
+          routeFamily: response.route_family ?? null,
+          ownerAgent: response.turn_owner ?? response.agent_id,
+          ownerDisplayName:
+            response.display_name ?? response.agent_name,
+          ownershipLocked: true,
+          realtimeStreaming: false,
           assistantMessage: response,
+          tokenUsage: response.token_usage ?? null,
+          latencyMs: response.latency_ms ?? null,
           interactionMode:
             response.interaction_mode ?? interactionMode,
           contributors: (
@@ -532,7 +543,6 @@ export default function App() {
       }
 
       await refreshMessages(activeThreadId);
-      setStreamState(createTerminalState());
     } catch (error) {
       if (isAuthFailure(error)) return;
       setStreamState((state) => ({
@@ -626,7 +636,7 @@ export default function App() {
           <div className="brand-copy">
             <p className="eyebrow">PATROAI · INTELLIGENCE OS</p>
             <h1>ORKIO Command Center</h1>
-            <p>Premium Multi-Agent Experience R0.6.1</p>
+            <p>Premium Quality & Audit Experience R0.6.2</p>
           </div>
         </div>
 
@@ -662,6 +672,7 @@ export default function App() {
 
         <ChatConsole
           agents={agents}
+          capabilities={capabilities}
           selectedAgentId={selectedAgentId}
           onAgentChange={changeAgent}
           interactionMode={interactionMode}

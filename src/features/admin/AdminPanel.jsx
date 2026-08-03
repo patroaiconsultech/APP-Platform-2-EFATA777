@@ -1,10 +1,33 @@
-function RuntimeRow({ label, value, active }) {
+import {
+  formatMessageTimestamp,
+} from "../../presentation/messageView.mjs";
+
+
+function RuntimeRow({ label, value, active, warning }) {
   return (
     <div className="runtime-row">
       <span>{label}</span>
-      <strong className={active ? "is-active" : ""}>
+      <strong
+        className={
+          active
+            ? "is-active"
+            : warning
+              ? "is-warning"
+              : ""
+        }
+      >
         {value}
       </strong>
+    </div>
+  );
+}
+
+
+function MetricCard({ label, value }) {
+  return (
+    <div className="metric-card">
+      <span>{label}</span>
+      <strong>{value ?? 0}</strong>
     </div>
   );
 }
@@ -17,71 +40,194 @@ export function AdminPanel({
 }) {
   if (!overview) return null;
 
+  const runtime = overview.runtime ?? {};
+  const gates = overview.governance ?? {};
+  const summary = overview.capability_summary ?? {};
+  const generatedAt = formatMessageTimestamp(
+    overview.generated_at,
+  );
+
   return (
     <aside className="admin-panel panel">
       <div className="panel-heading compact">
         <div>
-          <span className="eyebrow">ADMIN DEMO</span>
-          <h2>Control Center</h2>
+          <span className="eyebrow">ADMIN · TENANT ONLY</span>
+          <h2>Audit Control Center</h2>
+          {generatedAt && (
+            <small>Snapshot: {generatedAt}</small>
+          )}
         </div>
       </div>
 
-      <div className="metric-grid">
-        <div className="metric-card">
-          <span>Tenant</span>
-          <strong>{overview.tenant_id}</strong>
-        </div>
-        <div className="metric-card">
-          <span>Threads</span>
-          <strong>{overview.stats.threads}</strong>
-        </div>
-        <div className="metric-card">
-          <span>Mensagens</span>
-          <strong>{overview.stats.messages}</strong>
-        </div>
+      <div className="metric-grid premium-metrics">
+        <MetricCard
+          label="Threads"
+          value={overview.stats?.threads}
+        />
+        <MetricCard
+          label="Mensagens"
+          value={overview.stats?.messages}
+        />
+        <MetricCard
+          label="Execuções"
+          value={overview.stats?.executions}
+        />
+        <MetricCard
+          label="Decisões de recovery"
+          value={overview.stats?.recovery_decisions}
+        />
       </div>
 
       <div className="runtime-status-list">
         <RuntimeRow
+          label="Release"
+          value={
+            runtime.release_version ??
+            governance?.release_version ??
+            "não identificada"
+          }
+          active
+        />
+        <RuntimeRow
+          label="Commit"
+          value={
+            runtime.release_sha ??
+            governance?.release_sha ??
+            "UNPINNED"
+          }
+          warning={
+            (runtime.release_sha ?? governance?.release_sha) ===
+            "UNPINNED"
+          }
+        />
+        <RuntimeRow
+          label="Repository"
+          value={
+            runtime.repository_backend ??
+            governance?.repository_backend ??
+            "desconhecido"
+          }
+        />
+        <RuntimeRow
           label="LLM"
-          value={governance?.llm_model ?? "não identificado"}
-          active={governance?.real_llm_enabled}
+          value={
+            runtime.llm_model ??
+            governance?.llm_model ??
+            "não identificado"
+          }
+          active={
+            runtime.real_llm_enabled ??
+            governance?.real_llm_enabled
+          }
         />
         <RuntimeRow
           label="Realtime textual"
           value={
-            governance?.realtime_streaming_enabled
+            (runtime.realtime_streaming_enabled ??
+              governance?.realtime_streaming_enabled)
               ? "ativo"
               : "inativo"
           }
-          active={governance?.realtime_streaming_enabled}
+          active={
+            runtime.realtime_streaming_enabled ??
+            governance?.realtime_streaming_enabled
+          }
         />
         <RuntimeRow
           label="Multiagente"
           value={
-            governance?.multiagent_enabled
+            (runtime.multiagent_enabled ??
+              governance?.multiagent_enabled)
               ? "ativo"
               : "inativo"
           }
-          active={governance?.multiagent_enabled}
+          active={
+            runtime.multiagent_enabled ??
+            governance?.multiagent_enabled
+          }
         />
         <RuntimeRow
           label="Execution graph"
-          value={governance?.execution_graph ?? "desconhecido"}
+          value={
+            runtime.execution_graph ??
+            governance?.execution_graph ??
+            "desconhecido"
+          }
+          warning={
+            (runtime.execution_graph ??
+              governance?.execution_graph) === "trace_lite"
+          }
         />
         <RuntimeRow
-          label="Capabilities"
-          value={String(
-            capabilities?.length ??
-            governance?.capability_registry_entries ??
-            0,
-          )}
+          label="WebRTC voz"
+          value={runtime.voice_webrtc ?? "não implementado"}
+          warning
+        />
+      </div>
+
+      <div className="capability-summary">
+        <h3>Capability Registry</h3>
+        <div className="metric-grid capability-metrics">
+          <MetricCard
+            label="Disponíveis"
+            value={summary.available}
+          />
+          <MetricCard
+            label="Sob gate"
+            value={summary.feature_gated}
+          />
+          <MetricCard
+            label="Planejadas"
+            value={summary.planned}
+          />
+          <MetricCard
+            label="Total"
+            value={
+              summary.total ??
+              capabilities?.length ??
+              0
+            }
+          />
+        </div>
+      </div>
+
+      <div className="runtime-status-list governance-gates">
+        <h3>Gates de execução</h3>
+        <RuntimeRow
+          label="Write"
+          value={gates.write_executed ? "executado" : "bloqueado"}
+          active={!gates.write_executed}
+        />
+        <RuntimeRow
+          label="Commit"
+          value={gates.commit_executed ? "executado" : "bloqueado"}
+          active={!gates.commit_executed}
+        />
+        <RuntimeRow
+          label="Merge"
+          value={gates.merge_executed ? "executado" : "bloqueado"}
+          active={!gates.merge_executed}
+        />
+        <RuntimeRow
+          label="Deploy"
+          value={gates.deploy_executed ? "executado" : "bloqueado"}
+          active={!gates.deploy_executed}
+        />
+        <RuntimeRow
+          label="Aprovação humana"
+          value={
+            gates.human_approval_required === false
+              ? "não exigida"
+              : "obrigatória"
+          }
+          active={gates.human_approval_required !== false}
         />
       </div>
 
       <p className="admin-disclaimer">
-        trace_lite não representa grafo persistente. Ações
-        críticas continuam exigindo aprovação humana.
+        Este painel mostra somente evidências disponíveis no
+        tenant atual. trace_lite não representa grafo persistente.
+        Capacidades planejadas não estão disponíveis para execução.
       </p>
     </aside>
   );
