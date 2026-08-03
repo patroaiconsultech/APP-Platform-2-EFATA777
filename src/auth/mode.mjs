@@ -71,6 +71,23 @@ export function normalizeAuthStatus(raw) {
     throw new Error("DEMO_PROFILE_INVALID");
   }
 
+  const demoAdminProfile =
+    authMode === "demo_headers" &&
+    raw?.demo_admin_profile
+      ? raw.demo_admin_profile
+      : null;
+
+  if (
+    demoAdminProfile &&
+    (
+      !demoAdminProfile.tenant_id ||
+      !demoAdminProfile.user_id ||
+      demoAdminProfile.role !== "admin"
+    )
+  ) {
+    throw new Error("DEMO_ADMIN_PROFILE_INVALID");
+  }
+
   const oidc =
     authMode === "oidc_introspection"
       ? normalizeOidc(raw?.oidc)
@@ -94,6 +111,18 @@ export function normalizeAuthStatus(raw) {
               demoProfile.role === "admin"
                 ? "admin"
                 : "member",
+          }
+        : null,
+    demoAdminProfile:
+      demoAdminProfile
+        ? {
+            tenantId: String(
+              demoAdminProfile.tenant_id,
+            ),
+            userId: String(
+              demoAdminProfile.user_id,
+            ),
+            role: "admin",
           }
         : null,
     externalProviderConfigured:
@@ -120,17 +149,18 @@ export function sessionMatchesAuthStatus(
 
   if (authStatus.authMode === "demo_headers") {
     if (session.mode !== "demo_headers") return false;
-    const profile = authStatus.demoProfile;
+    const profile =
+      session.role === "admin"
+        ? authStatus.demoAdminProfile
+        : authStatus.demoProfile;
     if (!profile) return false;
     return (
       session.tenantId === profile.tenantId &&
       session.userId === profile.userId &&
+      session.role === profile.role &&
       (
-        session.role === "member" ||
-        (
-          session.role === "admin" &&
-          authStatus.demoAdminEnabled
-        )
+        session.role !== "admin" ||
+        authStatus.demoAdminEnabled
       )
     );
   }

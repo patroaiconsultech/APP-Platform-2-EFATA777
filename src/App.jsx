@@ -32,6 +32,9 @@ import {
 import {
   AdminPanel,
 } from "./features/admin/AdminPanel.jsx";
+import {
+  EvolutionPanel,
+} from "./features/evolution/EvolutionPanel.jsx";
 import { getRuntimeConfig } from "./config/runtime.mjs";
 import {
   consumeSSE,
@@ -62,10 +65,20 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [selectedAgentId, setSelectedAgentId] =
     useState("Orkio");
+  const [interactionMode, setInteractionMode] =
+    useState("single");
+  const [realtimeEnabled, setRealtimeEnabled] =
+    useState(true);
   const [streamState, setStreamState] =
     useState(createTerminalState());
+
   const [adminOverview, setAdminOverview] =
     useState(null);
+  const [governance, setGovernance] = useState(null);
+  const [capabilities, setCapabilities] = useState([]);
+  const [proposal, setProposal] = useState(null);
+  const [proposalSubmitting, setProposalSubmitting] =
+    useState(false);
 
   function resetProtectedState() {
     setAgents([]);
@@ -73,6 +86,9 @@ export default function App() {
     setActiveThreadId(null);
     setMessages([]);
     setAdminOverview(null);
+    setGovernance(null);
+    setCapabilities([]);
+    setProposal(null);
     setStreamState(createTerminalState());
   }
 
@@ -278,6 +294,26 @@ export default function App() {
         });
       });
 
+    api.governanceStatus()
+      .then((status) => {
+        if (!active) return;
+        setGovernance(status);
+        setRealtimeEnabled(
+          status.realtime_streaming_enabled === true,
+        );
+      })
+      .catch(() => {
+        if (active) setGovernance(null);
+      });
+
+    api.listCapabilities()
+      .then((items) => {
+        if (active) setCapabilities(items);
+      })
+      .catch(() => {
+        if (active) setCapabilities([]);
+      });
+
     return () => {
       active = false;
     };
@@ -382,9 +418,19 @@ export default function App() {
     }
   }
 
+  function changeAgent(agentId) {
+    setSelectedAgentId(agentId);
+    if (
+      agentId === "Team" &&
+      interactionMode === "single"
+    ) {
+      setInteractionMode("team_synthesis");
+    }
+  }
+
   async function cancelActiveExecution() {
     const requestId = streamState.requestId;
-    if (!requestId) return;
+    if (!requestId || !realtimeEnabled) return;
 
     try {
       const cancelled = await api.cancelExecution(
@@ -417,16 +463,26 @@ export default function App() {
     if (!activeThreadId || !session) return;
 
     const requestId = newRequestId();
+    const payload = {
+      request_id: requestId,
+      thread_id: activeThreadId,
+      content,
+      requested_agent: selectedAgentId,
+      interaction_mode: interactionMode,
+    };
     const controller = new AbortController();
-    const timeout = setTimeout(
-      () => controller.abort(),
-      runtime.streamTimeoutMs,
-    );
+    const timeout = realtimeEnabled
+      ? setTimeout(
+          () => controller.abort(),
+          runtime.streamTimeoutMs,
+        )
+      : null;
 
     setStreamState({
       ...createTerminalState(),
       phase: "connecting",
       requestId,
+      interactionMode,
     });
     setMessages((current) => [
       ...current,
@@ -443,18 +499,38 @@ export default function App() {
     ]);
 
     try {
-      await consumeSSE({
-        url: `${runtime.apiBaseUrl}/api/chat/stream`,
-        payload: {
-          request_id: requestId,
-          thread_id: activeThreadId,
-          content,
-          requested_agent: selectedAgentId,
-        },
-        session,
-        signal: controller.signal,
-        onState: setStreamState,
-      });
+      if (realtimeEnabled) {
+        await consumeSSE({
+          url: `${runtime.apiBaseUrl}/api/chat/stream`,
+          payload,
+          session,
+          signal: controller.signal,
+          onState: setStreamState,
+        });
+      } else {
+        const response = await api.completeChat(payload);
+        setStreamState({
+          ...createTerminalState(),
+          phase: "done",
+          terminal: true,
+          agentDone: true,
+          assistantMessage: response,
+          interactionMode:
+            response.interaction_mode ?? interactionMode,
+          contributors: (
+            response.contributions ?? []
+          ).map((item) => ({
+            agentId: item.agent_id,
+            displayName: item.display_name,
+            status: item.status ?? "success",
+            content: item.content ?? "",
+            model: item.model ?? null,
+            provider: item.provider ?? null,
+            tokenUsage: item.token_usage ?? null,
+          })),
+        });
+      }
+
       await refreshMessages(activeThreadId);
       setStreamState(createTerminalState());
     } catch (error) {
@@ -478,7 +554,29 @@ export default function App() {
         activeThreadId,
       ).catch(() => undefined);
     } finally {
-      clearTimeout(timeout);
+      if (timeout !== null) clearTimeout(timeout);
+    }
+  }
+
+  async function createEvolutionProposal(payload) {
+    setProposalSubmitting(true);
+    setProposal(null);
+    try {
+      const created = await api.createEvolutionProposal(
+        payload,
+      );
+      setProposal(created);
+    } catch (error) {
+      if (isAuthFailure(error)) return;
+      setProposal({
+        error: {
+          code:
+            error.code ?? "EVOLUTION_PROPOSAL_FAILED",
+          message: error.message,
+        },
+      });
+    } finally {
+      setProposalSubmitting(false);
     }
   }
 
@@ -524,16 +622,18 @@ export default function App() {
     <main className="app-shell">
       <header className="app-header">
         <div className="brand-block">
-          <div className="brand-mark">O</div>
+          <div className="brand-mark brand-orbit">O</div>
           <div className="brand-copy">
+            <p className="eyebrow">PATROAI · INTELLIGENCE OS</p>
             <h1>ORKIO Command Center</h1>
-            <p>
-              Premium Auth & Console R0.4.2
-            </p>
+            <p>Premium Multi-Agent Experience R0.6.1</p>
           </div>
         </div>
 
         <div className="header-session">
+          <span className="session-chip role-chip">
+            {session.role ?? "validando papel"}
+          </span>
           <span className="session-chip">
             {session.userId ?? "validando usuário"}
           </span>
@@ -546,7 +646,13 @@ export default function App() {
         </div>
       </header>
 
-      <div className="workspace">
+      <div
+        className={
+          session.role === "admin"
+            ? "workspace admin-workspace"
+            : "workspace"
+        }
+      >
         <ThreadSidebar
           threads={threads}
           activeThreadId={activeThreadId}
@@ -557,16 +663,33 @@ export default function App() {
         <ChatConsole
           agents={agents}
           selectedAgentId={selectedAgentId}
-          onAgentChange={setSelectedAgentId}
+          onAgentChange={changeAgent}
+          interactionMode={interactionMode}
+          onInteractionModeChange={setInteractionMode}
+          realtimeEnabled={realtimeEnabled}
+          onRealtimeChange={setRealtimeEnabled}
           messages={messages}
           streamState={streamState}
           onSend={send}
           onCancel={cancelActiveExecution}
           hasActiveThread={Boolean(activeThreadId)}
+          governance={governance}
         />
 
         {session.role === "admin" && (
-          <AdminPanel overview={adminOverview} />
+          <div className="control-column">
+            <AdminPanel
+              overview={adminOverview}
+              governance={governance}
+              capabilities={capabilities}
+            />
+            <EvolutionPanel
+              governance={governance}
+              proposal={proposal}
+              onCreateProposal={createEvolutionProposal}
+              submitting={proposalSubmitting}
+            />
+          </div>
         )}
       </div>
     </main>

@@ -145,3 +145,67 @@ test("event after done fails closed", () => {
     /SSE_EVENT_AFTER_DONE/,
   );
 });
+
+
+test("typed contribution events populate visible agent cards", () => {
+  let state = createTerminalState();
+  state = reduceSSEEvent(state, {
+    id: "c1",
+    event: "agent_contribution_started",
+    data: {
+      payload: {
+        node_id: "n1",
+        agent_id: "Orion",
+        display_name: "Orion",
+      },
+    },
+  });
+  assert.equal(state.contributors.length, 1);
+  assert.equal(state.contributors[0].status, "running");
+
+  state = reduceSSEEvent(state, {
+    id: "c2",
+    event: "agent_contribution_done",
+    data: {
+      payload: {
+        node_id: "n1",
+        agent_id: "Orion",
+        display_name: "Orion",
+        content: "Análise técnica",
+        model: "gpt-4o-mini",
+        token_usage: { total_tokens: 9 },
+      },
+    },
+  });
+  assert.equal(state.contributors.length, 1);
+  assert.equal(state.contributors[0].status, "success");
+  assert.equal(
+    state.contributors[0].content,
+    "Análise técnica",
+  );
+  assert.equal(
+    state.contributors[0].tokenUsage.total_tokens,
+    9,
+  );
+});
+
+
+test("initial execution exposes interaction mode and route family", () => {
+  const state = reduceSSEEvent(
+    createTerminalState(),
+    {
+      id: "e-mode",
+      event: "execution",
+      data: {
+        payload: {
+          request_id: "r-mode",
+          execution_id: "x-mode",
+          route_family: "team_roundtable",
+          interaction_mode: "roundtable",
+        },
+      },
+    },
+  );
+  assert.equal(state.interactionMode, "roundtable");
+  assert.equal(state.routeFamily, "team_roundtable");
+});

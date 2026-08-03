@@ -7,13 +7,13 @@ export function LoginPanel({
   if (authStatus?.authMode === "oidc_introspection") {
     return (
       <main className="auth-gate">
-        <section className="auth-card">
-          <div className="brand-mark">O</div>
-          <h1>ORKIO · Acesso corporativo</h1>
+        <section className="auth-card premium-auth-card">
+          <div className="brand-mark brand-orbit">O</div>
+          <p className="eyebrow">ORKIO PLATFORM</p>
+          <h1>Acesso corporativo</h1>
           <p>
-            Entre pelo provedor de identidade configurado.
-            A ORKIO receberá apenas um token de acesso
-            temporário e resolverá tenant e papel no backend.
+            Entre pelo provedor configurado. Tenant e papel
+            serão resolvidos e validados pelo backend.
           </p>
 
           {authError && (
@@ -34,8 +34,9 @@ export function LoginPanel({
     );
   }
 
-  const profile = authStatus?.demoProfile;
-  if (!profile) {
+  const memberProfile = authStatus?.demoProfile;
+  const adminProfile = authStatus?.demoAdminProfile;
+  if (!memberProfile) {
     return (
       <main className="auth-gate">
         <section className="auth-card">
@@ -49,18 +50,14 @@ export function LoginPanel({
 
   return (
     <main className="auth-gate">
-      <section className="auth-card">
-        <h1>ORKIO RC1 · Acesso controlado</h1>
+      <section className="auth-card premium-auth-card">
+        <div className="brand-mark brand-orbit">O</div>
+        <p className="eyebrow">DEMONSTRAÇÃO CONTROLADA</p>
+        <h1>ORKIO Command Center</h1>
         <p>
-          Identidade sintética permitida somente em
-          ambiente RC1 isolado e sem dados reais.
+          Ambiente RC1 com identidade sintética, agentes,
+          realtime textual e governança assistida.
         </p>
-        <dl>
-          <dt>Tenant</dt>
-          <dd>{profile.tenantId}</dd>
-          <dt>Usuário</dt>
-          <dd>{profile.userId}</dd>
-        </dl>
 
         {authError && (
           <div className="error-panel">
@@ -68,20 +65,53 @@ export function LoginPanel({
           </div>
         )}
 
-        <button
-          type="button"
-          className="primary-action"
-          onClick={() =>
-            onDemoLogin({
-              mode: "demo_headers",
-              tenantId: profile.tenantId,
-              userId: profile.userId,
-              role: "member",
-            })
-          }
-        >
-          Entrar no ambiente RC1
-        </button>
+        <div className="login-profile-grid">
+          <article className="login-profile-card">
+            <span className="profile-kicker">OPERAÇÃO</span>
+            <strong>{memberProfile.userId}</strong>
+            <small>{memberProfile.tenantId}</small>
+            <button
+              type="button"
+              className="primary-action"
+              onClick={() =>
+                onDemoLogin({
+                  mode: "demo_headers",
+                  tenantId: memberProfile.tenantId,
+                  userId: memberProfile.userId,
+                  role: "member",
+                })
+              }
+            >
+              Entrar como membro
+            </button>
+          </article>
+
+          {adminProfile && (
+            <article className="login-profile-card admin-profile-card">
+              <span className="profile-kicker">ADMIN DEMO</span>
+              <strong>{adminProfile.userId}</strong>
+              <small>{adminProfile.tenantId}</small>
+              <button
+                type="button"
+                className="secondary-action"
+                onClick={() =>
+                  onDemoLogin({
+                    mode: "demo_headers",
+                    tenantId: adminProfile.tenantId,
+                    userId: adminProfile.userId,
+                    role: "admin",
+                  })
+                }
+              >
+                Entrar no Control Center
+              </button>
+            </article>
+          )}
+        </div>
+
+        <p className="security-note">
+          Não utilize esta modalidade com tenants ou dados reais.
+        </p>
       </section>
     </main>
   );

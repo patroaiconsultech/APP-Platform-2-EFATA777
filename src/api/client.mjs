@@ -167,6 +167,12 @@ export function createApiClient({
           threadId,
         )}/messages`,
       ),
+    completeChat: (payload) =>
+      request("/api/chat", {
+        method: "POST",
+        requestId: payload.request_id,
+        body: JSON.stringify(payload),
+      }),
     cancelExecution: (
       executionRequestId,
       reason,
@@ -201,5 +207,12 @@ export function createApiClient({
       request("/api/admin/overview"),
     governanceStatus: () =>
       request("/api/governance/status"),
+    listCapabilities: () =>
+      request("/api/agents/capabilities"),
+    createEvolutionProposal: (payload) =>
+      request("/api/governance/evolution/proposals", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
   };
 }

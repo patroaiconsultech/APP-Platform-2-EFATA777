@@ -158,3 +158,47 @@ test("ordinary authorization failure is not logout", () => {
     false,
   );
 });
+
+
+test("demo admin session must match the explicit admin profile", () => {
+  const status = normalizeAuthStatus({
+    auth_mode: "demo_headers",
+    demo_available: true,
+    demo_admin_enabled: true,
+    demo_profile: {
+      tenant_id: "tenant-demo",
+      user_id: "user-demo",
+      role: "member",
+    },
+    demo_admin_profile: {
+      tenant_id: "tenant-demo",
+      user_id: "admin-demo",
+      role: "admin",
+    },
+  });
+
+  assert.equal(
+    sessionMatchesAuthStatus(
+      {
+        mode: "demo_headers",
+        tenantId: "tenant-demo",
+        userId: "admin-demo",
+        role: "admin",
+      },
+      status,
+    ),
+    true,
+  );
+  assert.equal(
+    sessionMatchesAuthStatus(
+      {
+        mode: "demo_headers",
+        tenantId: "tenant-demo",
+        userId: "user-demo",
+        role: "admin",
+      },
+      status,
+    ),
+    false,
+  );
+});

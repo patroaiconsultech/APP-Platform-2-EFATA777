@@ -48,11 +48,20 @@ export function createTerminalState() {
     lastEventId: null,
     requestId: null,
     executionId: null,
+    routeFamily: null,
+    interactionMode: "single",
+    ownerAgent: null,
+    ownerDisplayName: null,
+    ownershipLocked: false,
+    realtimeStreaming: false,
+    contributors: [],
     error: null,
     terminal: false,
     agentDone: false,
     cancelled: false,
     assistantMessage: null,
+    tokenUsage: null,
+    latencyMs: null,
   };
 }
 
@@ -72,6 +81,63 @@ function effectiveEventType(event) {
     event.event ??
     "message"
   );
+}
+
+
+function normalizeContribution(payload, previous = {}) {
+  return {
+    nodeId: payload.node_id ?? previous.nodeId ?? null,
+    agentId: payload.agent_id ?? previous.agentId ?? "unknown",
+    displayName:
+      payload.display_name ??
+      previous.displayName ??
+      payload.agent_id ??
+      "Agente",
+    status:
+      payload.phase === "node_completed"
+        ? "success"
+        : payload.status ?? previous.status ?? "running",
+    content: payload.content ?? previous.content ?? "",
+    model: payload.model ?? previous.model ?? null,
+    provider: payload.provider ?? previous.provider ?? null,
+    tokenUsage: payload.token_usage ?? previous.tokenUsage ?? null,
+  };
+}
+
+
+function upsertContribution(contributors, payload) {
+  const agentId = payload.agent_id ?? "unknown";
+  const index = contributors.findIndex(
+    (item) => item.agentId === agentId,
+  );
+  if (index < 0) {
+    return [
+      ...contributors,
+      normalizeContribution(payload),
+    ];
+  }
+
+  const next = [...contributors];
+  next[index] = normalizeContribution(
+    payload,
+    contributors[index],
+  );
+  return next;
+}
+
+
+function mergeTerminalContributions(current, message) {
+  const terminal = Array.isArray(message?.contributions)
+    ? message.contributions
+    : [];
+  let next = current;
+  for (const item of terminal) {
+    next = upsertContribution(next, {
+      ...item,
+      phase: "node_completed",
+    });
+  }
+  return next;
 }
 
 
@@ -98,10 +164,59 @@ export function reduceSSEEvent(state, event) {
       payload.execution_id ??
       event.data?.execution_id ??
       state.executionId;
+    next.routeFamily =
+      payload.route_family ?? state.routeFamily;
+    next.interactionMode =
+      payload.interaction_mode ??
+      state.interactionMode;
+
+    if (payload.phase === "node_started") {
+      next.contributors = upsertContribution(
+        state.contributors,
+        payload,
+      );
+    } else if (payload.phase === "node_completed") {
+      next.contributors = upsertContribution(
+        state.contributors,
+        payload,
+      );
+    }
+  } else if (type === "agent_contribution_started") {
+    next.contributors = upsertContribution(
+      state.contributors,
+      {
+        ...payload,
+        status: "running",
+      },
+    );
+  } else if (type === "agent_contribution_done") {
+    next.contributors = upsertContribution(
+      state.contributors,
+      {
+        ...payload,
+        phase: "node_completed",
+      },
+    );
   } else if (
     ["agent_started", "started", "metadata"].includes(type)
   ) {
     next.phase = "streaming";
+    next.ownerAgent =
+      payload.agent_id ?? state.ownerAgent;
+    next.ownerDisplayName =
+      payload.display_name ??
+      state.ownerDisplayName ??
+      payload.agent_id ??
+      null;
+    next.ownershipLocked =
+      payload.ownership_locked ??
+      state.ownershipLocked;
+    next.interactionMode =
+      payload.interaction_mode ??
+      state.interactionMode;
+    next.realtimeStreaming =
+      payload.realtime_streaming ??
+      state.realtimeStreaming;
   } else if (
     [
       "agent_chunk",
@@ -127,6 +242,16 @@ export function reduceSSEEvent(state, event) {
       event.data?.message ??
       payload ??
       null;
+    next.contributors = mergeTerminalContributions(
+      state.contributors,
+      next.assistantMessage,
+    );
+    next.tokenUsage =
+      next.assistantMessage?.token_usage ??
+      state.tokenUsage;
+    next.latencyMs =
+      next.assistantMessage?.latency_ms ??
+      state.latencyMs;
   } else if (type === "error") {
     next.error =
       payload.error ??
@@ -225,6 +350,8 @@ export async function consumeSSE({
     ...createTerminalState(),
     phase: "streaming",
     requestId: payload.request_id ?? null,
+    interactionMode:
+      payload.interaction_mode ?? "single",
   };
   onState?.(state);
 
