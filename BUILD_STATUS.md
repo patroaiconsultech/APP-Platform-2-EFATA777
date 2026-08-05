@@ -1,25 +1,21 @@
-# Frontend Build Status
+
+# Build Status — ORKIO Frontend R0.7.0
 
 ```text
-SOURCE_GENERATION=PASS
-CONTRACT_TESTS=PASS
-DEPENDENCY_INSTALL=BLOCKED_BY_ENVIRONMENT_REGISTRY
-PRODUCTION_BUILD=NOT_EXECUTED
-PACKAGE_LOCK=NOT_GENERATED
+node_tests=83 PASS
+contract_checks=PASS
+local_smoke_metadata=PASS
+node_syntax=PASS
+jsx_typescript_parse=PASS
+
+package_lock=ABSENT_IN_UPLOADED_BASELINE
+npm_ci=NOT_EXECUTED
+vite_production_build=NOT_EXECUTED
 ```
 
-Falha observada:
+The complete source package preserves the uploaded baseline's dependency
+contract. Generate and review the lockfile in the controlled repository branch,
+then run `npm ci` and `npm run build` before deployment.
 
-```text
-E404 @vitejs/plugin-react@4.3.1 not found in the configured internal registry
-```
-
-Próxima validação:
-
-1. usar registry aprovado com cobertura das dependências;
-2. gerar `package-lock.json`;
-3. executar `npm ci`;
-4. executar `npm test`;
-5. executar `npm run build`;
-6. inspecionar `dist`;
-7. gerar hash do artefato.
+Real WebRTC/provider/browser runtime proof is not included in this local
+artifact.

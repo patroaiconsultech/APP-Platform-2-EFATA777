@@ -169,8 +169,8 @@ test("thread rename and partial UX are visible and actionable", async () => {
   assert.match(sidebar, /onRename/);
   assert.match(chat, /Síntese parcial/);
   assert.match(chat, /contribuições validadas foram preservadas/i);
-  assert.match(app, /Premium Responsive Containment/);
-  assert.match(app, /R0\.6\.5/);
+  assert.match(app, /Premium Realtime Voice Core/);
+  assert.match(app, /R0\.7\.0/);
 });
 
 

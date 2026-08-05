@@ -100,7 +100,12 @@ export function createApiClient({
       ...identityHeaders,
       ...(headers ?? {}),
     };
-    if (options.body !== undefined) {
+    if (
+      options.body !== undefined &&
+      !Object.keys(requestHeaders).some(
+        (name) => name.toLowerCase() === "content-type",
+      )
+    ) {
       requestHeaders["Content-Type"] =
         "application/json";
     }
@@ -181,6 +186,79 @@ export function createApiClient({
         requestId: payload.request_id,
         body: JSON.stringify(payload),
       }),
+    createVoiceSession: (payload) =>
+      request("/api/voice/sessions", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    createVoiceCall: (sessionId, payload) =>
+      request(
+        `/api/voice/sessions/${encodeURIComponent(
+          sessionId,
+        )}/calls`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+      ),
+    resumeVoiceSession: (sessionId, payload) =>
+      request(
+        `/api/voice/sessions/${encodeURIComponent(
+          sessionId,
+        )}/resume`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+      ),
+    appendVoiceEvent: (sessionId, payload) =>
+      request(
+        `/api/voice/sessions/${encodeURIComponent(
+          sessionId,
+        )}/events`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+      ),
+    completeVoiceTurn: (sessionId, payload) =>
+      request(
+        `/api/voice/sessions/${encodeURIComponent(
+          sessionId,
+        )}/turns`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+      ),
+    reportVoiceAudio: (sessionId, turnId, payload) =>
+      request(
+        `/api/voice/sessions/${encodeURIComponent(
+          sessionId,
+        )}/turns/${encodeURIComponent(turnId)}/audio`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+      ),
+    closeVoiceSession: (sessionId, payload) =>
+      request(
+        `/api/voice/sessions/${encodeURIComponent(
+          sessionId,
+        )}/close`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+      ),
+    getVoiceSession: (sessionId, afterSequence = 0) =>
+      request(
+        `/api/voice/sessions/${encodeURIComponent(
+          sessionId,
+        )}?after_sequence=${encodeURIComponent(
+          String(afterSequence),
+        )}`,
+      ),
     cancelExecution: (
       executionRequestId,
       reason,

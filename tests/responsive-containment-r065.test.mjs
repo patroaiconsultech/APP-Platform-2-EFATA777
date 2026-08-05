@@ -63,7 +63,7 @@ test("admin mobile layout is single-column, bounded and scrollable", async () =>
 });
 
 
-test("R0.6.5 release identity is visible in frontend sources", async () => {
+test("R0.7.0 release identity is visible in frontend sources", async () => {
   const index = await source("../index.html");
   const identity = JSON.parse(
     await source("../release-identity.json"),
@@ -72,11 +72,11 @@ test("R0.6.5 release identity is visible in frontend sources", async () => {
     await source("../package.json"),
   );
 
-  assert.match(index, /Premium R0\.6\.5/);
-  assert.equal(packageJson.version, "0.6.5");
-  assert.equal(identity.release_version, "0.6.5");
+  assert.match(index, /Premium R0\.7\.0/);
+  assert.equal(packageJson.version, "0.7.0");
+  assert.equal(identity.release_version, "0.7.0");
   assert.equal(
     identity.release_id,
-    "ORKIO-PREMIUM-RESPONSIVE-TENANT-TRUTH-R0-6-5",
+    "ORKIO-PREMIUM-REALTIME-VOICE-CORE-R0-7-0",
   );
 });

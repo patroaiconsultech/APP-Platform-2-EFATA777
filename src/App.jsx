@@ -91,6 +91,7 @@ export default function App() {
     useState("single");
   const [realtimeEnabled, setRealtimeEnabled] =
     useState(true);
+  const [voiceActive, setVoiceActive] = useState(false);
   const [streamState, setStreamState] =
     useState(createTerminalState());
 
@@ -111,6 +112,7 @@ export default function App() {
     setGovernance(null);
     setCapabilities([]);
     setProposal(null);
+    setVoiceActive(false);
     setStreamState(createTerminalState());
   }
 
@@ -723,7 +725,7 @@ export default function App() {
           <div className="brand-copy">
             <p className="eyebrow">PATROAI · INTELLIGENCE OS</p>
             <h1>ORKIO Command Center</h1>
-            <p>Premium Responsive Containment & Tenant Truth R0.6.5</p>
+            <p>Premium Realtime Voice Core R0.7.0</p>
           </div>
         </div>
 
@@ -761,10 +763,12 @@ export default function App() {
           onAgentChange={changeAgent}
           interactionMode={interactionMode}
           onInteractionModeChange={setInteractionMode}
-          controlsDisabled={[
-            "connecting",
-            "streaming",
-          ].includes(streamState.phase)}
+          controlsDisabled={
+            voiceActive ||
+            ["connecting", "streaming"].includes(
+              streamState.phase,
+            )
+          }
         />
 
         <ChatConsole
@@ -780,6 +784,13 @@ export default function App() {
           onCancel={cancelActiveExecution}
           hasActiveThread={Boolean(activeThreadId)}
           governance={governance}
+          api={api}
+          activeThreadId={activeThreadId}
+          onHistoryRefresh={() =>
+            refreshMessages(activeThreadId)
+          }
+          voiceActive={voiceActive}
+          onVoiceActiveChange={setVoiceActive}
         />
 
         {session.role === "admin" && (

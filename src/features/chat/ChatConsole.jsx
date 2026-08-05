@@ -10,6 +10,7 @@ import {
   ExecutionEvidenceBar,
 } from "../../components/ExecutionEvidenceBar.jsx";
 import { MessageBubble } from "../../components/MessageBubble.jsx";
+import { VoiceCallPanel } from "../../components/VoiceCallPanel.jsx";
 import {
   shouldSuggestRoundtable,
 } from "../../presentation/messageView.mjs";
@@ -46,6 +47,11 @@ export function ChatConsole({
   onCancel,
   hasActiveThread,
   governance,
+  api,
+  activeThreadId,
+  onHistoryRefresh,
+  voiceActive,
+  onVoiceActiveChange,
 }) {
   const [content, setContent] = useState("");
 
@@ -63,9 +69,9 @@ export function ChatConsole({
     ],
   );
 
-  const isBusy = ["connecting", "streaming"].includes(
-    streamState.phase,
-  );
+  const isBusy =
+    ["connecting", "streaming"].includes(streamState.phase) ||
+    voiceActive;
   const canCancel =
     Boolean(streamState.requestId) && isBusy;
   const roundtableSuggested = shouldSuggestRoundtable({
@@ -76,7 +82,7 @@ export function ChatConsole({
 
   async function submit(event) {
     event.preventDefault();
-    if (!composer.canSend) return;
+    if (!composer.canSend || voiceActive) return;
 
     const value = content.trim();
     setContent("");
@@ -108,6 +114,7 @@ export function ChatConsole({
             }
             disabled={
               isBusy ||
+              voiceActive ||
               governance?.realtime_streaming_enabled !== true
             }
             aria-pressed={realtimeEnabled}
@@ -118,15 +125,6 @@ export function ChatConsole({
             }
           >
             ⚡ Realtime textual
-          </button>
-
-          <button
-            type="button"
-            className="voice-toggle"
-            disabled
-            title="WebRTC de voz será liberado em gate separado"
-          >
-            🎙 Voz · próximo gate
           </button>
 
           <span className={`stream-indicator ${streamState.phase}`}>
@@ -153,6 +151,16 @@ export function ChatConsole({
           </div>
         )}
       </div>
+
+      <VoiceCallPanel
+        api={api}
+        threadId={activeThreadId}
+        enabled={governance?.realtime_voice_enabled === true}
+        selectedAgentId={selectedAgentId}
+        interactionMode={interactionMode}
+        onHistoryRefresh={onHistoryRefresh}
+        onActiveChange={onVoiceActiveChange}
+      />
 
       <AgentActivityPanel
         contributors={streamState.contributors}
@@ -232,14 +240,14 @@ export function ChatConsole({
             setContent(event.target.value)
           }
           onKeyDown={onKeyDown}
-          disabled={composer.disabled}
+          disabled={composer.disabled || voiceActive}
         />
 
         <div className="composer-actions">
           <small>Ctrl/⌘ + Enter para enviar</small>
           <button
             type="submit"
-            disabled={!composer.canSend}
+            disabled={!composer.canSend || voiceActive}
           >
             {composer.label}
           </button>

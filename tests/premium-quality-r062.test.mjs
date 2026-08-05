@@ -88,7 +88,7 @@ test("premium source exposes evidence and capability surfaces", async () => {
 });
 
 
-test("release identity is R0.6.5 responsive containment candidate", async () => {
+test("release identity is R0.7.0 realtime voice candidate", async () => {
   const identity = JSON.parse(
     await readFile(
       new URL("../release-identity.json", import.meta.url),
@@ -96,10 +96,10 @@ test("release identity is R0.6.5 responsive containment candidate", async () => 
     ),
   );
 
-  assert.equal(identity.release_version, "0.6.5");
+  assert.equal(identity.release_version, "0.7.0");
   assert.equal(
     identity.release_id,
-    "ORKIO-PREMIUM-RESPONSIVE-TENANT-TRUTH-R0-6-5",
+    "ORKIO-PREMIUM-REALTIME-VOICE-CORE-R0-7-0",
   );
   assert.equal(identity.channel, "audit-candidate");
 });
